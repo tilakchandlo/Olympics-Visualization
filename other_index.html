@@ -1,0 +1,221 @@
+f<!DOCTYPE html>
+<html>
+<head>
+    <!-- WE CAN PUT THE CSS HERE -->
+    <style>
+        body {
+            font: 10px sans-serif;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+        .bar {
+            fill: steelblue;
+        }
+        .x.axis path {
+            display: none;
+        }
+        /* IMPORTED FROM JQUERY TIPSY */
+        .tipsy { font-size: 13px;position: absolute; z-index: 100000;  margin-top:100px; padding: 5px; }
+          .tipsy-inner { background-color: #000; color: #FFF; max-width: 600px; padding: 5px 8px 4px 8px;text-align: center; margin-top:100px;}
+
+           Rounded corners
+          .tipsy-inner { border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px; }
+
+          /* Uncomment for shadow */
+         .tipsy-inner { box-shadow: 0 0 5px #000000; -webkit-box-shadow: 0 0 5px #000000; -moz-box-shadow: 0 0 5px #000000; }
+
+          .tipsy-arrow { position: absolute; width: 0; height: 0; line-height:/* 0*/; border: 5px dashed #000; }*/*/
+
+          /* Rules to colour arrows */
+/*          .tipsy-w .tipsy-arrow { left: 0; top: 50%; margin-top: 400px; border-right-style: solid; border-left: none; border-top-color: transparent; border-bottom-color: transparent; opacity:0;}*/*/
+
+
+    </style>
+</head>
+    <title>Olympic Medals</title>
+<body>
+    <h1>Medals Won in Olympic Games by Various Countries</h1>
+
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+    <script src="jquery.tipsy.js"></script>
+
+    <script>
+
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 40},
+        width = 7500 - margin.left - margin.right,
+        height = 575 - margin.top - margin.bottom;
+
+    var x0 = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+    var x1 = d3.scale.ordinal();
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var color = d3.scale.ordinal()
+        .range(["#FFD041", "#EFEFEF", "#8C6954"]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x0)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickFormat(d3.format(".2d"));
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.csv("Olympics.csv", function(error, data) {
+      var medals = d3.keys(data[0]).filter(function(key) { return key !== "Country" && key !=="TotalMedals"; });
+
+      data.forEach(function(d) {
+        d.countries = medals.map(function(name) { return {name: name, value: +d[name]}; });
+      });
+
+      x0.domain(data.map(function(d) {
+        if (d.TotalMedals > 0) {
+              return d.Country;
+        } }));
+      x1.domain(medals).rangeRoundBands([0, x0.rangeBand()]);
+      y.domain([0, d3.max(data, function(d) { return d3.max(d.countries, function(d) { return d.value; }); })]);
+
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Number of Medals");
+
+
+          var country = svg.selectAll(".Country")
+              .data(data)
+            .enter().append("g")
+              .attr("class", "g")
+              .attr("transform", function(d) { if(d.TotalMedals > 0) return "translate(" + x0(d.Country) + ",0)"; });
+      // var games = svg.selectAll(".games")
+      //     .data(data)
+      //     .enter().append("g")
+      //     .attr("class", "games_Group")
+      //     .attr("transform", function(d) { return "translate(" + x0(d.Games) + ",0)"; })
+      //     .attr("height", function(){return 200;})
+      //     .attr("width", function(){return 27;})
+      //     .attr("gx", function(d){return d.x;})
+      //      .attr("gy", function(d){return d.y;})
+      //     .attr("id", function(d){return "gamesGroup" + d.Games;});
+
+
+      var rects = country.selectAll("rect")
+          .data(function(d) { return d.countries; })
+          .enter().append("rect")
+          .attr("width", x1.rangeBand())
+          .attr("x", function(d) { return x1(d.name); })
+          .attr("y", function(d) { return height; })
+          .attr("height", function(d) { return 0; })
+          .attr("class", function(d) { return d.name;})
+          .style("fill", function(d) { return color(d.name); })
+          .on("mouseover", function(d) {
+                if(d.value > 0){
+                d3.selectAll("."+d.name).style("fill", d3.rgb(color(d.name)).darker(2));
+                }
+            })
+          .on("mouseout", function(d) {d3.selectAll("."+d.name).style("fill", color(d.name)); })
+    ///////
+          .transition()
+          .duration(function(d) {return (height - y(d.value)) * 5;})
+          .attr("width", x1.rangeBand())
+          .attr("x", function(d) { return x1(d.name); })
+          .attr("y", function(d) {
+
+        var ret
+        if(d.value <= 0){
+            ret = 80;
+        }
+        else{
+            ret = d.value;
+        }
+
+        return y(ret); })
+          .attr("height", function(d) {
+        var h;
+        if(d.value <= 0){
+            h = height - y(80);
+        }
+        else{
+            h = height - y(d.value);
+        }
+        return h; })
+          .style("opacity", function(d) {
+        var retVal
+        if(d.value == 0){
+            retVal = "0.0";
+        }
+        else{
+            retVal = "1.0";
+        }
+        return retVal; });
+
+
+
+
+    $('g').tipsy({
+        gravity:'w', html:true, title:function(){
+            var d = this.data;
+            var string = 'Total Medals: ' +  TotalMedals;
+            return string;
+        }
+    })
+
+
+
+
+      var legend = svg.selectAll(".legend")
+          .data(medals.slice().reverse())
+        .enter().append("g")
+          .attr("class", function(d) { return "legend " + d;})
+          .attr("id", function(d) { return d;})
+          .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+
+      legend.append("rect")
+          .attr("x", width - 18)
+          .attr("width", 18)
+          .attr("height", 18)
+          .style("fill", color);
+
+      legend.append("text")
+          .attr("x", width - 24)
+          .attr("y", 9)
+          .attr("dy", ".35em")
+          .style("text-anchor", "end")
+          .text(function(d) { return d; });
+
+       legend.on("mouseover", function(d) {
+                d3.selectAll("."+d).style("fill", d3.rgb(color(d)).darker(2)); })
+          .on("mouseout", function(d) {d3.selectAll("."+d).style("fill", color(d)); });
+    });
+
+
+</script>
+</body>
+</html>
